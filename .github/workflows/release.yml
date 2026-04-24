@@ -1,0 +1,60 @@
+name: Release assets
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  attach-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read module id from module.json
+        id: meta
+        run: |
+          MODULE_ID=$(jq -r '.id' module.json)
+          if [ -z "$MODULE_ID" ] || [ "$MODULE_ID" = "null" ]; then
+            echo "::error::module.json is missing a valid id"
+            exit 1
+          fi
+          echo "module_id=$MODULE_ID" >> "$GITHUB_OUTPUT"
+          echo "Packaging module id: $MODULE_ID"
+
+      - name: Build installable zip
+        env:
+          MODULE_ID: ${{ steps.meta.outputs.module_id }}
+        run: |
+          mkdir -p "staging/${MODULE_ID}"
+          rsync -a \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.cursor' \
+            --exclude='.vscode' \
+            --exclude='.crush' \
+            --exclude='doc' \
+            --exclude='docs' \
+            --exclude='effects' \
+            --exclude='openspec' \
+            --exclude='node_modules' \
+            --exclude='dist' \
+            --exclude='build' \
+            --exclude='.env' \
+            --exclude='.DS_Store' \
+            --exclude='staging' \
+            --exclude="${MODULE_ID}.zip" \
+            ./ "staging/${MODULE_ID}/"
+          (cd staging && zip -rq "../${MODULE_ID}.zip" "${MODULE_ID}")
+          ls -la "${MODULE_ID}.zip"
+          unzip -l "${MODULE_ID}.zip" | head -40
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ steps.meta.outputs.module_id }}.zip
+            module.json
