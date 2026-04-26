@@ -17,7 +17,7 @@ Módulo Foundry VTT para **Warhammer Fantasy Roleplay 4th Edition** (sistema `wf
 
 ### Instalação por URL do manifesto
 
-Instale o módulo através do link https://github.com/ricardopiloto/wfrp4e-homebrew-qol/releases/latest/download/module.json
+Instale o módulo através do link https://github.com/ricardopiloto/wfrp4e-homebrew-qol/releases/download/v0.1.2/module.json
 
 ### Depois de instalar
 
