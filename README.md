@@ -17,9 +17,7 @@ Módulo Foundry VTT para **Warhammer Fantasy Roleplay 4th Edition** (sistema `wf
 
 ### Instalação por URL do manifesto
 
-Só é seguro depois de publicares uma **GitHub Release** que inclua `module.json` e `wfrp4e-homebrew-qol.zip` (o workflow em `.github/workflows/release.yml` gera o zip ao publicar um release). Nesse caso podes voltar a acrescentar `manifest` e `download` no `module.json` com os URLs corretos.
-
-Se o manifesto apontar para um zip ou `module.json` que **não existem** (404), o instalador do Foundry pode falhar com erros do tipo **`ENOENT: stat .../Data/modules/wfrp4e-homebrew-qol.zip`**. Nessa situação usa sempre a **instalação por pasta** até os URLs estarem válidos.
+Instale o módulo através do link https://github.com/ricardopiloto/wfrp4e-homebrew-qol/releases/latest/download/module.json
 
 ### Depois de instalar
 
