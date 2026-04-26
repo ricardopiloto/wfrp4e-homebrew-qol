@@ -15,6 +15,29 @@
  */
 
 const MODULE_ID = "wfrp4e-homebrew-qol";
+const SETTING_KEY = "trackHealCombatPenalty";
+const DEBUG_SETTING_KEY = "debugCombatAutomations";
+
+function isDebugEnabled() {
+  return Boolean(game.settings.get(MODULE_ID, DEBUG_SETTING_KEY));
+}
+
+function debugLog(feature, label, data) {
+  if (!isDebugEnabled()) return;
+  const payload = data ? { ...data } : undefined;
+  console.log(`${MODULE_ID} | debug | ${feature} | ${label}`, payload ?? "");
+}
+
+export function registerCombatHealSettings() {
+  game.settings.register(MODULE_ID, SETTING_KEY, {
+    name: "Track Heal skill combat penalties",
+    hint: "When enabled, a successful Heal skill test during an active combat encounter adds the combat movement-penalty Active Effects to the healer and target (GM applies).",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true,
+  });
+}
 
 /** @type {string} Must match openspec combat-heal-effects requirement exactly */
 const EFFECT_DESCRIPTION =
@@ -23,38 +46,109 @@ const EFFECT_DESCRIPTION =
 /** @param {ChatMessage} doc */
 async function onCreateChatMessage(doc) {
   try {
-    if (!game?.user?.isGM) return;
-    if (!game?.wfrp4e?.rolls?.TestWFRP) return;
-    if (doc.type !== "test") return;
-    if (doc.getFlag(MODULE_ID, "healCombatApplied")) return;
+    if (!game.settings.get(MODULE_ID, SETTING_KEY)) {
+      debugLog("Heal", "guard: settingOff", { messageId: doc?.id, type: doc?.type });
+      return;
+    }
+    if (!game?.user?.isGM) {
+      debugLog("Heal", "guard: notGM", { messageId: doc?.id });
+      return;
+    }
+    if (!game?.wfrp4e?.rolls?.TestWFRP) {
+      debugLog("Heal", "guard: missingTestWFRP", { messageId: doc?.id });
+      return;
+    }
+    if (doc.type !== "test") {
+      debugLog("Heal", "guard: wrongMessageType", { messageId: doc?.id, type: doc?.type });
+      return;
+    }
+    if (doc.getFlag(MODULE_ID, "healCombatApplied")) {
+      debugLog("Heal", "guard: alreadyAppliedFlag", { messageId: doc?.id });
+      return;
+    }
 
     const testData = doc.system?.testData;
-    if (!testData || testData.preData?.rollClass !== "SkillTest") return;
+    const rollClass = testData?.preData?.rollClass;
+    if (!testData) {
+      debugLog("Heal", "guard: missingTestData", { messageId: doc?.id });
+      return;
+    }
 
     const test = game.wfrp4e.rolls.TestWFRP.recreate(testData);
-    if (test.result?.outcome !== "success") return;
+    const outcome = test.result?.outcome;
+    if (outcome !== "success") {
+      debugLog("Heal", "guard: nonSuccessOutcome", { messageId: doc?.id, outcome });
+      return;
+    }
 
     const healLabel = game.i18n.localize("NAME.Heal");
     const skillName = test.item?.name ?? test.preData?.skillName;
-    if (skillName !== healLabel) return;
+    if (skillName !== healLabel) {
+      debugLog("Heal", "guard: skillNameMismatch", {
+        messageId: doc?.id,
+        skillName,
+        healLabel,
+      });
+      return;
+    }
+    const itemType = test.item?.type;
+    const looksLikeSkill =
+      rollClass === "SkillTest" || itemType === "skill" || Boolean(test.preData?.skillName);
+    if (!looksLikeSkill) {
+      debugLog("Heal", "guard: healNameButNotSkillLike", {
+        messageId: doc?.id,
+        rollClass,
+        itemType,
+        skillName,
+      });
+      return;
+    }
 
     const combat = game.combat;
-    if (!combat) return;
+    if (!combat) {
+      debugLog("Heal", "guard: missingCombat", { messageId: doc?.id });
+      return;
+    }
 
     const source = test.actor;
-    if (!source) return;
+    if (!source) {
+      debugLog("Heal", "guard: missingSourceActor", { messageId: doc?.id });
+      return;
+    }
 
     const targetActors = (test.targets ?? []).filter(Boolean);
     const target = targetActors.length ? targetActors[0] : source;
+    debugLog("Heal", "decision: resolvedTargets", {
+      messageId: doc?.id,
+      rollClass,
+      itemType,
+      outcome,
+      skillName,
+      healLabel,
+      combatId: combat.id,
+      combatRound: combat.round,
+      combatTurn: combat.turn,
+      sourceActorUuid: source.uuid,
+      targetsCount: targetActors.length,
+      targetActorUuid: target?.uuid,
+    });
     if (targetActors.length > 1) {
       console.warn(
         `${MODULE_ID}: Heal has multiple targets; applying combat penalty only to the first target.`,
       );
     }
 
+    debugLog("Heal", "action: applyPenaltiesAttempt", {
+      messageId: doc?.id,
+      sourceActorUuid: source.uuid,
+      targetActorUuid: target.uuid,
+    });
     await applyHealCombatPenalties({ source, target, combat, message: doc });
+    debugLog("Heal", "action: applyPenaltiesSuccess", { messageId: doc?.id });
     await doc.setFlag(MODULE_ID, "healCombatApplied", true);
+    debugLog("Heal", "action: setFlagSuccess", { messageId: doc?.id });
   } catch (err) {
+    debugLog("Heal", "error: exception", { messageId: doc?.id, error: err });
     console.error(`${MODULE_ID} | combat Heal hook`, err);
   }
 }
@@ -67,7 +161,7 @@ async function applyHealCombatPenalties({ source, target, combat, message }) {
 
   const base = {
     description: EFFECT_DESCRIPTION,
-    img: "icons/svg/downgrade.svg",
+    img: "icons/svg/heal.svg",
     disabled: false,
     origin,
     duration,
