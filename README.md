@@ -24,6 +24,29 @@ Instale o módulo através do link https://github.com/ricardopiloto/wfrp4e-homeb
 1. Para a funcionalidade **Heal em combate**, a opção de mundo **Track Heal skill combat penalties** vem **ligada** por omissão; desliga nas definições do módulo se não quiseres essa automação.
 2. Para a funcionalidade **Fast**, liga a opção nas definições do módulo (ver abaixo).
 
+## Macros de downtime (Between Adventures)
+
+Inspirado no comportamento de [WFRP4e-Endeavours](https://github.com/Txus5012/WFRP4e-Endeavours) (Txus5012), com MVP mais estreito (só Core Between Adventures; sem Travel nem settings de suplementos).
+
+### Importar a macro
+
+1. Ativa o módulo no mundo.
+2. Abre **Compendium Packs** → pasta **WFRP4e Homebrew QoL** → pack **Homebrew QoL Macros**.
+3. Importa a macro **Homebrew QoL — Downtime** (ou arrasta para a hotbar).
+
+A macro só chama `game.wfrp4eHomebrewQol.openDowntimeMenu()`.
+
+### Menu AppV2
+
+Com tokens selecionados no canvas:
+
+1. **Dinheiro para torrar (Money to Burn)** — só tokens de **PC** (`character`); confirma; põe GC/SS/BP a `0` (nomes localizados); publica chat com quem perdeu o dinheiro.
+2. **Fazer entre aventuras (Perform Endeavour)** — pede aos owners dos tokens uma endeavour **Core Between Adventures** (Select / Read Journal / None) e publica a escolha no chat. Journals do Core Rulebook precisam existir no mundo para “Read Journal” abrir a página.
+
+Também podes abrir o menu na consola: `game.wfrp4eHomebrewQol.openDowntimeMenu()`.
+
+---
+
 ## O que o módulo faz
 
 ### 1. Heal em combate (opcional via definição)
@@ -89,12 +112,23 @@ Se o WFRP4e estiver com **Group Advantage** ligado (`wfrp4e.useGroupAdvantage`) 
 
 | Ficheiro | Função |
 |----------|--------|
-| `module.json` | Manifesto Foundry, dependências, `url`; `manifest`/`download` só após release com artefactos válidos. |
+| `module.json` | Manifesto Foundry, dependências; `version`/`url`/`manifest`/`download` são placeholders preenchidos pelo CI no release. |
 | `scripts/wfrp4e-homebrew-qol.mjs` | Entrada: `init` / `ready`, registo das outras partes. |
 | `scripts/combat-heal-effects.mjs` | Automação Heal em combate. |
 | `scripts/fast-out-of-turn.mjs` | Definição + automação Fast fora de turno. |
 | `scripts/end-of-round-side-count.mjs` | Contagem Friendly vs Hostile no fim da ronda e shift de Group Advantage. |
-| `.github/workflows/release.yml` | CI: ao publicar um *release*, gera o ZIP do módulo e anexa `module.json` + zip (estilo [wfrp4e-nom](https://github.com/ricardopiloto/wfrp4e-nom)). |
+| `scripts/downtime-menu.mjs` | AppV2 do menu de downtime. |
+| `scripts/downtime-actions.mjs` | Money to Burn + Perform Endeavour (Core BA) + socket. |
+| `packs/homebrew-qol-macros` | Pack com a macro launcher. |
+| `.github/workflows/release.yml` | CI: ao publicar um *release*, substitui placeholders no `module.json`, gera o ZIP e anexa os artefactos (estilo [weatherfx](https://github.com/ricardopiloto/weatherfx)). |
+
+## Cutting a release
+
+1. Atualiza o [`CHANGELOG.md`](CHANGELOG.md) e o README com a versão a publicar.
+2. Publica um **GitHub Release** com tag `vX.Y.Z` (ex.: `v0.1.2`).
+3. O workflow `.github/workflows/release.yml` faz checkout do tag, substitui `${version}`, `${url}`, `${manifest}` e `${download}` no `module.json`, empacota `wfrp4e-homebrew-qol.zip` e faz upload do zip + manifesto no release (`gh release upload --clobber`).
+
+Não é necessário editar manualmente os URLs de `download` no `module.json` do repositório: esses campos são placeholders preenchidos pelo CI.
 
 ## Desenvolvimento e versões
 

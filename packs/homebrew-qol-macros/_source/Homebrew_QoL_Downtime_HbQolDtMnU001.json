@@ -1,0 +1,23 @@
+{
+  "_id": "HbQolDtMnU001",
+  "name": "Homebrew QoL — Downtime",
+  "type": "script",
+  "author": "",
+  "img": "icons/svg/book.svg",
+  "scope": "global",
+  "command": "game.wfrp4eHomebrewQol?.openDowntimeMenu?.() ?? game.modules.get(\"wfrp4e-homebrew-qol\")?.api?.openDowntimeMenu?.();",
+  "folder": null,
+  "sort": 0,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {},
+  "_stats": {
+    "coreVersion": "13.342",
+    "systemId": "wfrp4e",
+    "systemVersion": "9.0.0",
+    "createdTime": 1786910875109,
+    "modifiedTime": 1786910875109,
+    "lastModifiedBy": null
+  }
+}

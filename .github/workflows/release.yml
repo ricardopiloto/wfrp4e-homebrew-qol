@@ -1,3 +1,4 @@
+# Mirrors https://github.com/ricardopiloto/weatherfx/blob/master/.github/workflows/release.yml
 name: Release assets
 
 on:
@@ -13,6 +14,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
 
       - name: Read module id from module.json
         id: meta
@@ -24,6 +27,24 @@ jobs:
           fi
           echo "module_id=$MODULE_ID" >> "$GITHUB_OUTPUT"
           echo "Packaging module id: $MODULE_ID"
+
+      - name: Normalize release version
+        id: version
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Substitute release-specific values in module.json
+        uses: microsoft/variable-substitution@v1
+        with:
+          files: './module.json'
+        env:
+          version: ${{ steps.version.outputs.version }}
+          url: https://github.com/${{ github.repository }}
+          manifest: https://github.com/${{ github.repository }}/releases/latest/download/module.json
+          download: https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/${{ steps.meta.outputs.module_id }}.zip
 
       - name: Build installable zip
         env:
@@ -53,8 +74,16 @@ jobs:
           unzip -l "${MODULE_ID}.zip" | head -40
 
       - name: Upload release assets
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            ${{ steps.meta.outputs.module_id }}.zip
-            module.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          if [ -z "$TAG" ]; then
+            echo "::error::Release event is missing tag_name"
+            exit 1
+          fi
+          echo "Uploading assets to release tag: $TAG"
+          gh release upload "$TAG" \
+            "${{ steps.meta.outputs.module_id }}.zip" \
+            module.json \
+            --clobber

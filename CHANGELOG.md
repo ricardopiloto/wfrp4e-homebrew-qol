@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Nothing yet.
+
 ### Changed
 
 - Nothing yet.
@@ -14,6 +18,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Nothing yet.
+
+## [0.2.0] - 2026-08-16
+
+### Added
+
+- Menu de downtime (AppV2) com **Dinheiro para torrar (Money to Burn)** e **Fazer entre aventuras (Perform Endeavour)** (MVP Core Between Adventures).
+- Pack de macros **Homebrew QoL Macros** com a macro launcher `Homebrew QoL — Downtime` (`game.wfrp4eHomebrewQol.openDowntimeMenu()`).
+- Fluxo Money to Burn (só PCs, confirmação, zera GC/SS/BP, mensagem de chat) e Perform Endeavour com socket para owners (inspirado em [WFRP4e-Endeavours](https://github.com/Txus5012/WFRP4e-Endeavours)).
+
+### Changed
+
+- Workflow de release alinhado ao [weatherfx](https://github.com/ricardopiloto/weatherfx): checkout do tag, substituição de placeholders (`version` / `url` / `manifest` / `download`) no `module.json`, upload com `gh release upload --clobber`.
 
 ## [0.1.2] - 2026-04-25
 

@@ -1,4 +1,11 @@
 import {
+  moneyToBurn,
+  performEndeavour,
+  registerDowntimeSocket,
+  openEndeavourDialog,
+} from "./downtime-actions.mjs";
+import { openDowntimeMenu, DowntimeMenu } from "./downtime-menu.mjs";
+import {
   registerCombatHealEffects,
   registerCombatHealSettings,
 } from "./combat-heal-effects.mjs";
@@ -25,6 +32,19 @@ function registerDebugCombatAutomationSettings() {
   });
 }
 
+function exposeDowntimeApi() {
+  const api = {
+    openDowntimeMenu,
+    moneyToBurn,
+    performEndeavour,
+    openEndeavourDialog,
+    DowntimeMenu,
+  };
+  game.wfrp4eHomebrewQol = Object.assign(game.wfrp4eHomebrewQol ?? {}, api);
+  const mod = game.modules.get(MODULE_ID);
+  if (mod) mod.api = Object.assign(mod.api ?? {}, api);
+}
+
 Hooks.once("init", () => {
   console.log(`${MODULE_ID} | init`);
   if (game.system?.id === "wfrp4e") {
@@ -41,5 +61,7 @@ Hooks.once("ready", () => {
     registerCombatHealEffects();
     registerFastOutOfTurnHooks();
     registerEndOfRoundSideCountHooks();
+    registerDowntimeSocket();
+    exposeDowntimeApi();
   }
 });
